@@ -31,9 +31,18 @@ predict(model1, data.frame(ft_hclinton=77))
 ## of Obama's feeling thermometer score
 ## document carefully how you deal with missingness
 
+# Randomly subsetting data into partitions
+# Getting number of observations
+n.obs <- dim(anes)[1]
+# Sampling indices to subset by
+indices <- sample(x=1:n.obs, size=n.obs/2, replace=F)
+# Creating training set using these indices
+training.set <- anes[indices,]
+# And creating test set
+test.set <- anes[-indices,]
 
-
-
+# Using training set to build 3 models of Obama's feeling thermometer score
+# Documenting missingness
 
 
 
