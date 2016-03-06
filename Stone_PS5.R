@@ -150,12 +150,12 @@ m3.logit.predicted <- predict(model.3.logit$analyses[[1]], test.set)
 
 
 
-# Question 3: Function to take true outcomes and matrix of predictions, return matrix of fit 
-# statistics by model
+# Questions 3 and 4: Function to take true outcomes and matrix of predictions, return matrix of fit 
+# statistics by model. Allowing user to choose which of 5 fit statistics are calculated
 
 Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD=T, RMSLE=T, MAPE=T, 
                             MEAPE=T){
-  if(class(true.ys) != "numeric"){
+  if(class(true.ys) != "numeric" & class(true.ys) !="integer"){
     stop("Your true.ys values are invalid. Please pass the function a vector of observed Y values in numeric format.")
   }
   if(class(prediction.matrix) != "matrix"){
@@ -168,29 +168,67 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD
   }
   
   fit.statistics <- matrix(data=NA, nrow=dim(prediction.matrix)[2])
-  rownames(fit.statistics) <- sapply(1:dim(prediction.matrix)[2], FUN=function(i)paste("Row",i))
+  rownames(fit.statistics) <- sapply(1:dim(prediction.matrix)[2], FUN=function(i)paste("Model",i))
   
+  # Function for calculating RMSE
   RMSE_Function <- function(i){
     sqrt(mean(abs(prediction.matrix[,i] - true.ys)^2))
   }
   
-  if(RMSE=T){
-  fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSE_Function))
-  colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSE"
+  # Function for calculating MAD
+  MAD_Function <- function(i){
+    median(abs(prediction.matrix[,i] - true.ys))
   }
   
+  # Function for calculating root mean squared log error (RMSLE)
+  RMSLE_Function <- function(i){
+    sqrt(mean((log(prediction.matrix[,i] + 1) - log(true.ys + 1))^2))
+  }
+  
+  # Function for calculating mean absolute percentage error (MAPE)
+  MAPE_Function <- function(i){
+    (sum((abs(prediction.matrix[,i] - true.ys) / abs(true.ys))* 100) / length(true.ys))
+  }
+  
+  # Function for calculating MEAPE
+  MEAPE_Function <- function(i){
+    median((abs(prediction.matrix[,i] - true.ys) / abs(true.ys)) * 100)
+  }
+  
+  if(RMSE==T){
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSE_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSE"
+  }
+  
+  if(MAD==T){
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MAD_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MAD"
+  }
+  
+  if(RMSLE==T){
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSLE_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSLE"
+  }
+  
+  if(MAPE==T){
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MAPE_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MAPE"
+  }
+  
+  if(MEAPE==T){
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MEAPE_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MEAPE"
+  }
+  
+  fit.statistics <- fit.statistics[,-1]
+  return(fit.statistics)
   
 }
-
-
 
 practice.ys <- sample(1:10, 10, replace=T)
 practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
 
-n <- length(practice.ys)
-
-
-
+Measures_of_Fit(practice.ys, practice.mat)
 
 
 
