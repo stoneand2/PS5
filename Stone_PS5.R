@@ -150,9 +150,44 @@ m3.logit.predicted <- predict(model.3.logit$analyses[[1]], test.set)
 
 
 
-# Question 3: Making predictions
+# Question 3: Function to take true outcomes and matrix of predictions, return matrix of fit 
+# statistics by model
+
+Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD=T, RMSLE=T, MAPE=T, 
+                            MEAPE=T){
+  if(class(true.ys) != "numeric"){
+    stop("Your true.ys values are invalid. Please pass the function a vector of observed Y values in numeric format.")
+  }
+  if(class(prediction.matrix) != "matrix"){
+    stop("Your prediciton.matrix is invalid. Please pass the function a matrix of predictions.")
+  }
+  if(dim(prediction.matrix)[1] != length(true.ys)){
+    stop("Each column of your prediction matrix should correspond to a prediction for each of 
+          the values of Y specified in the true.ys vector. Ensure the number of rows in your 
+          prediction matrix equals the number of Y observations.")
+  }
+  
+  fit.statistics <- matrix(data=NA, nrow=dim(prediction.matrix)[2])
+  rownames(fit.statistics) <- sapply(1:dim(prediction.matrix)[2], FUN=function(i)paste("Row",i))
+  
+  RMSE_Function <- function(i){
+    sqrt(mean(abs(prediction.matrix[,i] - true.ys)^2))
+  }
+  
+  if(RMSE=T){
+  fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSE_Function))
+  colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSE"
+  }
+  
+  
+}
 
 
+
+practice.ys <- sample(1:10, 10, replace=T)
+practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
+
+n <- length(practice.ys)
 
 
 
