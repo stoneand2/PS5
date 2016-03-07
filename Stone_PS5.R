@@ -134,19 +134,23 @@ summary(pool(model.3.logit))[,1:2]
 
 # Question 2: Making predictions
 
+# First, using mice to fix NAs in test set, m=1 multiple imputations (we can only use 1 at at time
+# in the predictions, so I'll only make one)
+mice.test.set <- mice(test.set[,variables.to.use], 1)
+
 # predict() can't handle an entire mice object. So, I feed it the first of the mice iterations
 
 # Model 1
-m1.predicted <- predict(model.1$analyses[[1]], test.set)
-m1.logit.predicted <- invlogit(predict(model.1.logit$analyses[[1]], test.set))
+m1.predicted <- predict(model.1$analyses[[1]], mice.test.set)
+m1.logit.predicted <- invlogit(predict(model.1.logit$analyses[[1]], complete(mice.test.set,1)))
 
 # Model 2
-m2.predicted <- predict(model.2$analyses[[1]], test.set)
-m2.logit.predicted <- predict(model.2.logit$analyses[[1]], test.set)
+m2.predicted <- predict(model.2$analyses[[1]], mice.test.set)
+m2.logit.predicted <- invlogit(predict(model.2.logit$analyses[[1]], complete(mice.test.set,1)))
 
 # Model 3
-m3.predicted <- predict(model.3$analyses[[1]], test.set)
-m3.logit.predicted <- predict(model.3.logit$analyses[[1]], test.set)
+m3.predicted <- predict(model.3$analyses[[1]], mice.test.set)
+m3.logit.predicted <- invlogit(predict(model.3.logit$analyses[[1]], complete(mice.test.set,1)))
 
 
 
@@ -229,6 +233,29 @@ practice.ys <- sample(1:10, 10, replace=T)
 practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
 
 Measures_of_Fit(practice.ys, practice.mat)
+
+
+# Question 5: Evaluating the fit of my models 
+
+# Subsetting test set to remove those observations without actual Obama thermometer values
+# We can't actually compare to Y if the Y doesn't exist
+test.set <- test.set[-which(is.na(test.set$ft_dpc)),]
+# Subsetting predictions too
+m1.logit.predicted <- m1.logit.predicted[-which(is.na(test.set$ft_dpc))]
+m2.logit.predicted <- m2.logit.predicted[-which(is.na(test.set$ft_dpc))]
+m3.logit.predicted <- m3.logit.predicted[-which(is.na(test.set$ft_dpc))]
+
+# Creating matrix of predicted values
+predicted.matrix <- as.matrix(cbind(m1.logit.predicted, m2.logit.predicted, m3.logit.predicted))
+
+# True vector of Ys
+true.feelingtherm <- test.set$ft_dpc
+
+Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, RMSE=T, 
+                MAD=T, RMSLE=T, MAPE=T, MEAPE=T)
+
+# library(DMwR)
+# regr.eval(true.feelingtherm, m1.logit.predicted, c("mae","mse","rmse","mape"))
 
 
 
