@@ -70,11 +70,9 @@ anes$ecblame_pres <- as.factor(ifelse(anes$ecblame_pres == "1. A great deal" | a
                                NA))))
 
 # Making Obama's feeling therm. a proportion
-
 # I do this because the variable is bounded between 0 and 100. We can treat this as bounded betweeen
 # 0 and 1 (a proportion). Therefore, we should fit our models below using a functional form 
 # appropriate for binary dependent variables (i.e., not linear models)
-
 # Below, I will fit both linear and quasibinomial logistic regression models
 # The linear models will make the substantive interpretation of our models straightforward, but the
 # functional form of the logistic models ensures we obtain proportions bounded between 0 and 1
@@ -102,30 +100,41 @@ mice.training.set <- mice(training.set[,variables.to.use], 5)
 
 
 # Model 1: A story of party identification
+# Explanatory variable: self-assessed party ID
 
+# Linear model
 model.1 <- lm.mids(ft_dpc ~ pid_self + dem_hisp + dem_racecps_black, data=mice.training.set)
+# Logistic regression, modeling disperion
 model.1.logit <- glm.mids(ft_dpc ~ pid_self + dem_hisp + dem_racecps_black, 
                          data=mice.training.set, family = quasibinomial(link = "logit"))
-summary(pool(model.1))[,1:2]
-summary(pool(model.1.logit))[,1:2]
+# Examining the coefficients and standard errors from the models
+# summary(pool(model.1))[,1:2]
+# summary(pool(model.1.logit))[,1:2]
 
 # Model 2: A story of past voting behavior 
+# Explanatory variable: who respondent voted for in 2008
 
+# Linear model
 model.2 <- lm.mids(ft_dpc ~ interest_whovote2008 + dem_hisp + dem_racecps_black, 
                    data=mice.training.set)
+# Logistic regression, modeling disperion
 model.2.logit <- glm.mids(ft_dpc ~ interest_whovote2008 + dem_hisp + dem_racecps_black, 
                           data=mice.training.set, family = quasibinomial(link = "logit"))
-summary(pool(model.2))[,1:2]
-summary(pool(model.2.logit))[,1:2]
+#summary(pool(model.2))[,1:2]
+#summary(pool(model.2.logit))[,1:2]
 
 # Model 3: A story of perceptions of Obama's first term in office
+# Explanatory variables: perceptions of whether US became more/less secure under Obama, perceptions
+# of whether economy has gotten better under Obama, and whether Obama is to blame for the economy 
 
+# Linear model
 model.3 <- lm.mids(ft_dpc ~ presadm_secure + econ_ecpast + ecblame_pres + dem_hisp + 
                      dem_racecps_black, data=mice.training.set)
+# Logistic regression, modeling disperion
 model.3.logit <- glm.mids(ft_dpc ~ presadm_secure + econ_ecpast + ecblame_pres + dem_hisp + 
                     dem_racecps_black, data=mice.training.set, family = quasibinomial(link = "logit"))
-summary(pool(model.3))[,1:2]
-summary(pool(model.3.logit))[,1:2]
+#summary(pool(model.3))[,1:2]
+#summary(pool(model.3.logit))[,1:2]
 
 
 #################### 
@@ -175,7 +184,9 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forec
           prediction matrix equals the number of Y observations.")
   }
   
+  # Matrix that will be filled with fit statistics for each model
   fit.statistics <- matrix(data=NA, nrow=dim(prediction.matrix)[2])
+  # Giving matrix row names, each corresponding to one of the models that generated the predictions
   rownames(fit.statistics) <- sapply(1:dim(prediction.matrix)[2], FUN=function(i)paste("Model",i))
   
   # Function for calculating RMSE
@@ -203,62 +214,77 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forec
     median((abs(prediction.matrix[,i] - true.ys) / abs(true.ys)) * 100)
   }
   
+  # If-statement to determine whether to include the RMSE statistic or not
   if(RMSE==T){
+    # Use sapply() to compute RMSE statistic for each of the different model predictions
+    # 1:dim(prediction.matrix)[2] runs apply over the number of different models we fit
+    # Then, use cbind() to add statistics to the matrix of fit statistics created above
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSE_Function))
+    # Name the column RMSE
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSE"
   }
   
+  # If-statement to determine whether to include the MAD statistic or not
   if(MAD==T){
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MAD_Function))
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MAD"
   }
   
+  # If-statement to determine whether to include the RMSLE statistic or not
   if(RMSLE==T){
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=RMSLE_Function))
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "RMSLE"
   }
   
+  # If-statement to determine whether to include the MAPE statistic or not
   if(MAPE==T){
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MAPE_Function))
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MAPE"
   }
   
+  # If-statement to determine whether to include the MEAPE statistic or not
   if(MEAPE==T){
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MEAPE_Function))
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MEAPE"
   }
   
+  # For Problem 6
   # Function for calculating MEAPE
   MRAE_Function <- function(i){
     median(abs(prediction.matrix[,i] - true.ys) / abs(naive.forecasts - true.ys))
   }
   
+  # If-statement to determine whether to include the MRAE statistic or not
   if(MRAE==T){
+    # If-statement to ensure naive forecasts vector is in numeric/integer format
     if(class(naive.forecasts) != "numeric" & class(naive.forecasts) !="integer"){
       stop("Your vector of naive forecasts is invalid. Please pass in a vector of forecasts in integer or numeric format.")
     }
+    # If-statement to ensure naive forecasts vector is of same length as vector of actual Ys
     if(length(naive.forecasts) != length(true.ys)){
       stop("Your vector of naive forecasts is invalid. It must be the same length as the number of observations in your model.")
     }
-    
+    # Calculating and adding MRAE statistic to the matrix
     fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MRAE_Function))
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MRAE"
   }
   
+  # Removing the first column of fit matrix, as I filled this column with NAs when I created it
   fit.statistics <- fit.statistics[,-1]
+  # Returning the matrix of fit statistics
   return(fit.statistics)
   
 }
 
-practice.ys <- sample(1:10, 10, replace=T)
-practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
+#practice.ys <- sample(1:10, 10, replace=T)
+#practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
 
-Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=NULL, 
-                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
+#Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=NULL, 
+#                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
 
-naive.values <- rep(mean(practice.ys), 10)
-Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=naive.values, 
-                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=T)
+#naive.values <- rep(mean(practice.ys), 10)
+#Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=naive.values, 
+#                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=T)
 
 
 #################### 
@@ -267,22 +293,23 @@ Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forec
 # Evaluating the fit of my models 
 
 # Subsetting test set to remove those observations without actual Obama thermometer values
-# We can't actually compare to Y if the Y doesn't exist
+# I do this because we can't actually compare to Y if the Y doesn't exist
 test.set <- test.set[-which(is.na(test.set$ft_dpc)),]
-# Subsetting predictions too
+# Subsetting predictions in the same way
 m1.logit.predicted <- m1.logit.predicted[-which(is.na(test.set$ft_dpc))]
 m2.logit.predicted <- m2.logit.predicted[-which(is.na(test.set$ft_dpc))]
 m3.logit.predicted <- m3.logit.predicted[-which(is.na(test.set$ft_dpc))]
 
-# Creating matrix of predicted values
+# Creating matrix of predicted values to pass into the function
 predicted.matrix <- as.matrix(cbind(m1.logit.predicted, m2.logit.predicted, m3.logit.predicted))
 
-# True vector of Ys
+# True vector of Ys to pass into the function
 true.feelingtherm <- test.set$ft_dpc
 
+# Calculating the test statistics using the function
 # It appears that Model 3 is the most consistent performer in terms of minimizing these fit stats
 Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, RMSE=T, 
-                MAD=T, RMSLE=T, MAPE=T, MEAPE=T)
+                MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
 
 # library(DMwR)
 # regr.eval(true.feelingtherm, m1.logit.predicted, c("mae","mse","rmse","mape"))
