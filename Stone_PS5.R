@@ -281,11 +281,12 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forec
 
 # Subsetting test set to remove those observations without actual Obama thermometer values
 # I do this because we can't actually compare to Y if the Y doesn't exist
-test.set <- test.set[-which(is.na(test.set$ft_dpc)),]
+indices.to.remove <- which(is.na(test.set$ft_dpc))
+test.set <- test.set[-indices.to.remove,]
 # Subsetting predictions in the same way
-m1.logit.predicted <- m1.logit.predicted[-which(is.na(test.set$ft_dpc))]
-m2.logit.predicted <- m2.logit.predicted[-which(is.na(test.set$ft_dpc))]
-m3.logit.predicted <- m3.logit.predicted[-which(is.na(test.set$ft_dpc))]
+m1.logit.predicted <- m1.logit.predicted[-indices.to.remove]
+m2.logit.predicted <- m2.logit.predicted[-indices.to.remove]
+m3.logit.predicted <- m3.logit.predicted[-indices.to.remove]
 
 # Creating matrix of predicted values to pass into the function
 predicted.matrix <- as.matrix(cbind(m1.logit.predicted, m2.logit.predicted, m3.logit.predicted))
@@ -295,6 +296,8 @@ true.feelingtherm <- test.set$ft_dpc
 
 # Calculating the test statistics using the function
 # It appears that Model 3 is the most consistent performer in terms of minimizing these fit stats
+# Then, Model 2 does second best on all statistics but MEAPE
+# Model 1 does the worst on all statistics except MEAPE, where it is second best
 Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, RMSE=T, 
                 MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
 
