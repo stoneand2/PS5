@@ -15,19 +15,15 @@ set.seed(12435)
 # For reading in the data
 options(stringsAsFactors=F)
 
-# read in data
+# Reading in the data
 anes <- read.dta("anes_timeseries_2012_stata12.dta")
 
-## model Obama's feeling thermometer score as function
-## of Clinton's feeling thermometer score
-model1 <- lm(ft_dpc ~ ft_hclinton, anes)
 
-## make a prediction for a single observation with
-## hypothetical clinton score of 77
-predict(model1, data.frame(ft_hclinton=77))
-## we would expect a Obama score of 71.7
+#################### 
+#### Question 1 ####
+#################### 
 
-# Question 1: Partitioning data and fitting models of Obama's feeling thermometer score
+# Partitioning data and fitting models of Obama's feeling thermometer score
 
 # Setting the default ANES values for "Don't know", "Refused", "Other...", etc., to either NAs or
 # an "Other" category for my variables of interest
@@ -132,7 +128,10 @@ summary(pool(model.3))[,1:2]
 summary(pool(model.3.logit))[,1:2]
 
 
-# Question 2: Making predictions
+#################### 
+#### Question 2 ####
+#################### 
+# Making predictions
 
 # First, using mice to fix NAs in test set, m=1 multiple imputations (we can only use 1 at at time
 # in the predictions, so I'll only make one)
@@ -153,12 +152,17 @@ m3.predicted <- predict(model.3$analyses[[1]], mice.test.set)
 m3.logit.predicted <- invlogit(predict(model.3.logit$analyses[[1]], complete(mice.test.set,1)))
 
 
+##############################
+#### Questions 3, 4 and 6 ####
+##############################
 
-# Questions 3 and 4: Function to take true outcomes and matrix of predictions, return matrix of fit 
+# Writing a function to take true outcomes and matrix of predictions, return matrix of fit 
 # statistics by model. Allowing user to choose which of 5 fit statistics are calculated
 
-Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD=T, RMSLE=T, MAPE=T, 
-                            MEAPE=T){
+# Also allowing user to add optional vector of naive forecasts and calculate the MRAE
+
+Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forecasts=NULL, 
+                            RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F){
   if(class(true.ys) != "numeric" & class(true.ys) !="integer"){
     stop("Your true.ys values are invalid. Please pass the function a vector of observed Y values in numeric format.")
   }
@@ -224,6 +228,23 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD
     colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MEAPE"
   }
   
+  # Function for calculating MEAPE
+  MRAE_Function <- function(i){
+    median(abs(prediction.matrix[,i] - true.ys) / abs(naive.forecasts - true.ys))
+  }
+  
+  if(MRAE==T){
+    if(class(naive.forecasts) != "numeric" & class(naive.forecasts) !="integer"){
+      stop("Your vector of naive forecasts is invalid. Please pass in a vector of forecasts in integer or numeric format.")
+    }
+    if(length(naive.forecasts) != length(true.ys)){
+      stop("Your vector of naive forecasts is invalid. It must be the same length as the number of observations in your model.")
+    }
+    
+    fit.statistics <- cbind(fit.statistics,sapply(1:dim(prediction.matrix)[2], FUN=MRAE_Function))
+    colnames(fit.statistics)[dim(fit.statistics)[2]] <- "MRAE"
+  }
+  
   fit.statistics <- fit.statistics[,-1]
   return(fit.statistics)
   
@@ -232,10 +253,18 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), RMSE=T, MAD
 practice.ys <- sample(1:10, 10, replace=T)
 practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10)
 
-Measures_of_Fit(practice.ys, practice.mat)
+Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=NULL, 
+                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
+
+naive.values <- rep(mean(practice.ys), 10)
+Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=naive.values, 
+                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=T)
 
 
-# Question 5: Evaluating the fit of my models 
+#################### 
+#### Question 5 ####
+#################### 
+# Evaluating the fit of my models 
 
 # Subsetting test set to remove those observations without actual Obama thermometer values
 # We can't actually compare to Y if the Y doesn't exist
@@ -251,14 +280,12 @@ predicted.matrix <- as.matrix(cbind(m1.logit.predicted, m2.logit.predicted, m3.l
 # True vector of Ys
 true.feelingtherm <- test.set$ft_dpc
 
+# It appears that Model 3 is the most consistent performer in terms of minimizing these fit stats
 Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, RMSE=T, 
                 MAD=T, RMSLE=T, MAPE=T, MEAPE=T)
 
 # library(DMwR)
 # regr.eval(true.feelingtherm, m1.logit.predicted, c("mae","mse","rmse","mape"))
-
-
-
 
 
 
