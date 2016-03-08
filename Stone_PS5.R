@@ -98,42 +98,32 @@ variables.to.use <- c("ft_dpc","pid_self","dem_edugroup_x","dem_hisp","dem_racec
 # Multiple imputation to impute the NAs. m=5 multiple imputations (5 separate imputed datasets)
 mice.training.set <- mice(training.set[,variables.to.use], 5)
 
+# Please see the file Stone_Writeup_PS5.pdf for presentation of these regression results
 
 # Model 1: A story of party identification
 # Explanatory variable: self-assessed party ID
 
-# Linear model
-model.1 <- lm.mids(ft_dpc ~ pid_self + dem_hisp + dem_racecps_black, data=mice.training.set)
 # Logistic regression, modeling disperion
 model.1.logit <- glm.mids(ft_dpc ~ pid_self + dem_hisp + dem_racecps_black, 
                          data=mice.training.set, family = quasibinomial(link = "logit"))
-# Examining the coefficients and standard errors from the models
-# summary(pool(model.1))[,1:2]
+# Examining the coefficients and standard errors from the model
 # summary(pool(model.1.logit))[,1:2]
 
 # Model 2: A story of past voting behavior 
 # Explanatory variable: who respondent voted for in 2008
 
-# Linear model
-model.2 <- lm.mids(ft_dpc ~ interest_whovote2008 + dem_hisp + dem_racecps_black, 
-                   data=mice.training.set)
 # Logistic regression, modeling disperion
 model.2.logit <- glm.mids(ft_dpc ~ interest_whovote2008 + dem_hisp + dem_racecps_black, 
                           data=mice.training.set, family = quasibinomial(link = "logit"))
-#summary(pool(model.2))[,1:2]
 #summary(pool(model.2.logit))[,1:2]
 
 # Model 3: A story of perceptions of Obama's first term in office
 # Explanatory variables: perceptions of whether US became more/less secure under Obama, perceptions
 # of whether economy has gotten better under Obama, and whether Obama is to blame for the economy 
 
-# Linear model
-model.3 <- lm.mids(ft_dpc ~ presadm_secure + econ_ecpast + ecblame_pres + dem_hisp + 
-                     dem_racecps_black, data=mice.training.set)
 # Logistic regression, modeling disperion
 model.3.logit <- glm.mids(ft_dpc ~ presadm_secure + econ_ecpast + ecblame_pres + dem_hisp + 
                     dem_racecps_black, data=mice.training.set, family = quasibinomial(link = "logit"))
-#summary(pool(model.3))[,1:2]
 #summary(pool(model.3.logit))[,1:2]
 
 
@@ -149,15 +139,12 @@ mice.test.set <- mice(test.set[,variables.to.use], 1)
 # predict() can't handle an entire mice object. So, I feed it the first of the mice iterations
 
 # Model 1
-m1.predicted <- predict(model.1$analyses[[1]], mice.test.set)
 m1.logit.predicted <- invlogit(predict(model.1.logit$analyses[[1]], complete(mice.test.set,1)))
 
 # Model 2
-m2.predicted <- predict(model.2$analyses[[1]], mice.test.set)
 m2.logit.predicted <- invlogit(predict(model.2.logit$analyses[[1]], complete(mice.test.set,1)))
 
 # Model 3
-m3.predicted <- predict(model.3$analyses[[1]], mice.test.set)
 m3.logit.predicted <- invlogit(predict(model.3.logit$analyses[[1]], complete(mice.test.set,1)))
 
 
@@ -314,5 +301,7 @@ Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, R
 # library(DMwR)
 # regr.eval(true.feelingtherm, m1.logit.predicted, c("mae","mse","rmse","mape"))
 
+save(list=c("anes","mice.test.set","mice.training.set","m1.logit.predicted","m2.logit.predicted",
+       "m3.logit.predicted","model.1.logit","model.2.logit","model.3.logit"), file="ps5.RData")
 
 

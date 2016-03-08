@@ -1,0 +1,55 @@
+---
+output: pdf_document
+---
+
+Andy Stone  
+March 10, 2016 
+Problem Set 5  
+
+```{r, echo=FALSE, collapse=TRUE, comment=NA, warning=FALSE, message=FALSE}
+library(foreign); library(mice); library(arm); library(stargazer)
+setwd("~/github/PS5")
+load(file="ps5.RData")
+```
+
+1. Presentation of Model Results
+
+In Table \ref{table1}, I present the results of each of my models.
+
+\begin{table}[ht]
+\centering
+\caption{Logistic Regression Models of Obama Feeling Thermometor, Using MICE to Handle Missingness} 
+\label{table1}
+\begin{tabular}{l|rr|rr|rr}
+  \hline
+  & Model 1 & & Model 2 & & Model 3 & \\
+Variable & Estimate & St. Err & Estimate & St. Err & Estimate & St. Err \\ 
+  \hline
+$\alpha$ & 3.013 & 0.104 & 1.884 & 0.103 & 0.781 & 0.127 \\ 
+  Independent & -1.233 & 0.058 & & && \\ 
+  Republican & -2.381 & 0.069 & & & & \\ 
+  McCain Vote 2008 & & & -1.362 & 0.064 & & \\ 
+  Obama Vote 2008 & & & 0.976 & 0.059 & & \\ 
+  Other Vote 2008 & & & -0.673 & 0.163 & & \\  
+  More Secure & & & & & 0.777 & 0.065\\ 
+  Same Secure & & & & & 0.486 & 0.057\\ 
+  Econ Same & & & & & -0.521 & 0.059\\ 
+  Econ Worse & & & & & -1.037 & 0.064 \\ 
+  No Blame for Obama & & & & & 2.197 & 0.084 \\ 
+  Some Blame for Obama & & & & & 1.364 & 0.056 \\  
+  Not Hispanic & -0.445 & 0.067 & -0.448 & 0.065 & -0.454 & 0.060\\
+  Not Black & -1.478 & 0.084 & -1.376 & 0.082 & -1.292 & 0.076\\
+   \hline
+   Resid. Deviance & 1039 && 958 && 772\\
+   \hline
+\end{tabular}
+\end{table}
+
+
+
+
+
+
+
+
+
