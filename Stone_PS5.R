@@ -157,6 +157,40 @@ m3.logit.predicted <- invlogit(predict(model.3.logit$analyses[[1]], complete(mic
 
 # Also allowing user to add optional vector of naive forecasts and calculate the MRAE
 
+#' A function to calculate fit statistics. 
+#'
+#' Calculates fit statistics using predictions from regression models. 
+#'
+#' @param true.ys A numeric or integer vector of true Yi values. 
+#' @param prediction.matrix A matrix where each row corresponds to a predicted Yi value and each
+#' column corresponds to a different regression model that creates the predicted Yi values. The
+#' number of rows must equal the number of true Yi observations.
+#' @param naive.forecasts An optional numeric or integer vector of naive forecasts of the true Yi
+#' values. Its length must be equal to the number of true Yi observations.
+#' @param RMSE An option of whether to compute the RMSE statistic or not. Defaults to T. 
+#' @param MAD An option of whether to compute the MAD statistic or not. Defaults to T.  
+#' @param RMSLE An option of whether to compute the RMSLE statistic or not. Defaults to T. 
+#' @param MAPE An option of whether to compute the MAPE statistic or not. Defaults to T. 
+#' @param MEAPE An option of whether to compute the MEAPE statistic or not. Defaults to T. 
+#' @param MRAE An option of whether to compute the MRAE statistic or not. Defaults to F. This
+#' statistic can only be calculated if a vector of valid naive forecasts is provided. 
+#'
+#' @return A matrix where each column corresponds with one of the specified fit statistics, 
+#' and each row corresponds to a model.
+#' @author Andy Stone.
+#' @examples
+#' 
+#' practice.ys <- sample(1:10, 10, replace=T)
+#' practice.mat <- matrix(sample(1:10, 40, replace=T), nrow=10) 
+#' Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=NULL, 
+#'                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
+#'                
+#' naive.values <- rep(mean(practice.ys), 10)
+#' Measures_of_Fit(true.ys=practice.ys, prediction.matrix=practice.mat, naive.forecasts=naive.values, 
+#'                RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=T)
+#'                
+#' @rdname Measures_of_Fit
+
 Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forecasts=NULL, 
                             RMSE=T, MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F){
   if(class(true.ys) != "numeric" & class(true.ys) !="integer"){
@@ -284,15 +318,20 @@ Measures_of_Fit <- function(true.ys=c(), prediction.matrix=matrix(), naive.forec
 indices.to.remove <- which(is.na(test.set$ft_dpc))
 test.set <- test.set[-indices.to.remove,]
 # Subsetting predictions in the same way
-m1.logit.predicted <- m1.logit.predicted[-indices.to.remove]
-m2.logit.predicted <- m2.logit.predicted[-indices.to.remove]
-m3.logit.predicted <- m3.logit.predicted[-indices.to.remove]
+# I need to use unname because the predicted values inherit their index values from the full ANES 
+# dataset
+m1.logit.predicted <- unname(m1.logit.predicted)[-indices.to.remove]
+m2.logit.predicted <- unname(m2.logit.predicted)[-indices.to.remove]
+m3.logit.predicted <- unname(m3.logit.predicted)[-indices.to.remove]
 
 # Creating matrix of predicted values to pass into the function
 predicted.matrix <- as.matrix(cbind(m1.logit.predicted, m2.logit.predicted, m3.logit.predicted))
 
 # True vector of Ys to pass into the function
-true.feelingtherm <- test.set$ft_dpc
+# Adding 0.00001 to value if it is zero to avoid infinity values in the MAPE statistic (divide by 
+# zero in the numerator ei/abs(yi))
+# This doesn't change the values of the statistics
+true.feelingtherm <- ifelse(test.set$ft_dpc == 0, test.set$ft_dpc + 0.0001, test.set$ft_dpc)
 
 # Calculating the test statistics using the function
 # It appears that Model 3 is the most consistent performer in terms of minimizing these fit stats
@@ -301,8 +340,10 @@ true.feelingtherm <- test.set$ft_dpc
 Measures_of_Fit(true.ys=true.feelingtherm, prediction.matrix=predicted.matrix, RMSE=T, 
                 MAD=T, RMSLE=T, MAPE=T, MEAPE=T, MRAE=F)
 
+# An existing package that lets us check our function... numbers match, MAPE is /100 because that is 
+# another way of defining it (without the numeric percentage rather than a decimal percentage)
 # library(DMwR)
-# regr.eval(true.feelingtherm, m1.logit.predicted, c("mae","mse","rmse","mape"))
+# regr.eval(true.feelingtherm, m1.logit.predicted, c("rmse","mape"))
 
 save(list=c("anes","mice.test.set","mice.training.set","m1.logit.predicted","m2.logit.predicted",
        "m3.logit.predicted","model.1.logit","model.2.logit","model.3.logit"), file="ps5.RData")
